@@ -1,50 +1,38 @@
-# Welcome to your Expo app 👋
+# TaskMate
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## FOL Group ID
 
-## Get started
+SxGy
 
-1. Install dependencies
+## Group Members
 
-   ```bash
-   npm install
-   ```
+- Ajitsinh Rajput
+- Meet Rajnibhai Zadafiya
 
-2. Start the app
+## Project Description
 
-   ```bash
-   npx expo start
-   ```
+TaskMate is a mobile productivity app built with React Native and Firebase.  
+It helps users create, track, and manage daily tasks efficiently with reminders, priorities, and a clean interface.
 
-In the output, you'll find options to open the app in a
+## Data Source
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **Type**: Multi-user input
+- **Database**: Firebase Firestore (NoSQL cloud database)
+- **Difficulty**: Medium
+- This allows multiple registered users to create, update, and sync tasks in real time.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Features
 
-## Get a fresh project
+### Ajitsinh Rajput
 
-When you're ready, run:
+- Users can create and view new tasks
+- Users can edit or delete existing tasks
+- Users can set due dates and reminders for tasks
+- Users can mark tasks as complete
 
-```bash
-npm run reset-project
-```
+### Meet Rajnibhai Zadafiya
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Users can filter tasks by priority
+- Users can search tasks by keywords
+- Users can enable dark mode in settings
+- Users can receive push notifications for reminders
