@@ -2,7 +2,7 @@
 
 ## FOL Group ID
 
-SxG4
+SxG4 - Group 4
 
 ## Group Members
 
