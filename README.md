@@ -34,5 +34,5 @@ It helps users create, track, and manage daily tasks efficiently with reminders,
 
 - Users can filter tasks by priority (High, Medium, Low)
 - Users can search tasks by keywords
-- Users can organize tasks into categories (e.g., Work, Personal, School)
+- Users can organize tasks into categories (e.g. Work, Personal, School)
 - Users can view completed tasks in a history/archive section
