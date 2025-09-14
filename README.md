@@ -17,7 +17,7 @@ It helps users create, track, and manage daily tasks efficiently with reminders,
 ## Data Source
 
 - **Type**: Multi-user input
-- **Database**: Firebase Firestore (NoSQL cloud database)
+- **Database**: Firebase Firestore (NoSQL Cloud Database)
 - **Difficulty**: Medium
 - This allows multiple registered users to create, update, and sync tasks in real time.
 
