@@ -1,98 +1,254 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Colors } from "@/constants/theme";
+import { db } from "@/hooks/firebaseConfig";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Ionicons } from "@expo/vector-icons";
+import { Link } from "expo-router";
+import { onValue, ref } from "firebase/database";
+import React, { useEffect, useState } from "react";
+import {
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  priority: "High" | "Medium" | "Low";
+  createdAt: string;
+  modifiedAt: string;
+}
 
 export default function HomeScreen() {
+  const userName = "John";
+  const currentHour = new Date().getHours();
+  const { theme } = useColorScheme();
+  const isDark = theme === "dark";
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  // ✅ Fetch tasks and sort by most recent modification or creation
+  useEffect(() => {
+    const tasksRef = ref(db, "tasks/");
+    const unsubscribe = onValue(tasksRef, (snapshot) => {
+      const data = snapshot.val();
+
+      if (data) {
+        const list = Object.keys(data)
+          .map((key) => ({
+            id: key,
+            ...data[key],
+          }))
+          .sort((a, b) => {
+            const dateA = new Date(a.modifiedAt || a.createdAt).getTime();
+            const dateB = new Date(b.modifiedAt || b.createdAt).getTime();
+            return dateB - dateA; // newest (modified or created) first
+          });
+
+        setTasks(list.slice(0, 3)); // show top 3
+      } else {
+        setTasks([]);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const getGreeting = () => {
+    if (currentHour < 12) return "Good Morning";
+    if (currentHour < 18) return "Good Afternoon";
+    return "Good Evening";
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "High":
+        return "#e74c3c";
+      case "Medium":
+        return "#f1c40f";
+      case "Low":
+        return "#2ecc71";
+      default:
+        return "#ccc";
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: Colors[theme].background }]}
+    >
+      <View style={styles.container}>
+        {/* App Title */}
+        <Text
+          style={[
+            styles.appTitle,
+            { color: isDark ? Colors.dark.tint : Colors.light.tint },
+          ]}
+        >
+          TaskMate
+        </Text>
+
+        {/* Greeting */}
+        <Text style={[styles.greeting, { color: Colors[theme].text }]}>
+          {`${getGreeting()}, ${userName}!`}
+        </Text>
+        <Text style={[styles.subText, { color: Colors[theme].text }]}>
+          Let’s make today productive.
+        </Text>
+        {/* Illustration */}
+        <Ionicons
+          name="checkmark-done-circle-outline"
+          size={160}
+          color={Colors[theme].tint}
+          style={styles.icon}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
+        {/* ✅ Upcoming Tasks Card */}
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: isDark ? "#1e1e1e" : "#f2f2f2" },
+          ]}
+        >
+          <Text style={[styles.cardTitle, { color: Colors[theme].text }]}>
+            Recent Tasks
+          </Text>
+
+          {tasks.length > 0 ? (
+            <FlatList
+              data={tasks}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => {
+                const lastUpdated = new Date(
+                  item.modifiedAt || item.createdAt
+                ).toLocaleString();
+                return (
+                  <View style={styles.taskRow}>
+                    <Ionicons
+                      name="ellipse"
+                      size={10}
+                      color={getPriorityColor(item.priority)}
+                      style={{ marginRight: 8 }}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={[styles.taskText, { color: Colors[theme].text }]}
+                        numberOfLines={1}
+                      >
+                        {item.title}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.taskDate,
+                          { color: isDark ? "#aaa" : "#666" },
+                        ]}
+                      >
+                        {lastUpdated}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              }}
             />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
+          ) : (
+            <Text
+              style={[
+                styles.noTasks,
+                { color: isDark ? "#aaa" : "#555", marginTop: 10 },
+              ]}
+            >
+              No tasks yet. Add one to get started!
+            </Text>
+          )}
+
+          <Link href="/tasks" asChild>
+            <TouchableOpacity
+              style={[styles.viewAllButton, { backgroundColor: "#4a90e2" }]}
+            >
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
+
+        {/* CTA Button */}
+        <Link href="/tasks" asChild>
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.buttonText}>Go to My Tasks</Text>
+          </TouchableOpacity>
         </Link>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        {/* Quote */}
+        <Text style={[styles.quote, { color: isDark ? "#aaa" : "#777" }]}>
+          “Success is the sum of small efforts, repeated day in and day out.”
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  safeArea: { flex: 1 },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  appTitle: {
+    fontSize: 34,
+    fontWeight: "900",
+    marginBottom: 30,
+    letterSpacing: 0.6,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  greeting: { fontSize: 26, fontWeight: "700", marginBottom: 6 },
+  subText: { fontSize: 16, marginBottom: 20 },
+  icon: { marginVertical: 20 },
+  button: {
+    backgroundColor: "#4a90e2",
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    elevation: 3,
   },
+  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  quote: {
+    marginTop: 40,
+    fontSize: 14,
+    fontStyle: "italic",
+    textAlign: "center",
+  },
+
+  // Card Styles
+  card: {
+    width: "90%",
+    borderRadius: 12,
+    padding: 16,
+    // marginTo: 20,
+    marginBottom: 20,
+
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  cardTitle: { fontSize: 18, fontWeight: "700", marginBottom: 10 },
+  taskRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 10,
+  },
+  taskText: { fontSize: 15, fontWeight: "500" },
+  taskDate: { fontSize: 11 },
+  noTasks: { textAlign: "center", fontSize: 14 },
+  viewAllButton: {
+    alignSelf: "flex-end",
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+  },
+  viewAllText: { color: "#fff", fontWeight: "600" },
 });
