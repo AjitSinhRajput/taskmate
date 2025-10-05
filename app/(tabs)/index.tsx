@@ -30,7 +30,7 @@ export default function HomeScreen() {
   const isDark = theme === "dark";
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Fetch tasks and sort by most recent modification or creation feature
+  // Fetch tasks and sort them by most recent modification or creation feature
   useEffect(() => {
     const tasksRef = ref(db, "tasks/");
     const unsubscribe = onValue(tasksRef, (snapshot) => {
