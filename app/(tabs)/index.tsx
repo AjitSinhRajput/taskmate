@@ -45,7 +45,7 @@ export default function HomeScreen() {
           .sort((a, b) => {
             const dateA = new Date(a.modifiedAt || a.createdAt).getTime();
             const dateB = new Date(b.modifiedAt || b.createdAt).getTime();
-            return dateB - dateA; // newest (modified or created) shown first
+            return dateB - dateA; // newest (modified or created)  first
           });
 
         setTasks(list.slice(0, 3)); // show top 3
