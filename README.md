@@ -2,6 +2,7 @@
 
 ## FOL Group ID
 
+INFO-6134-01-25F - 4
 SxG4 - Group 4
 
 ## Group Members
@@ -17,7 +18,7 @@ It helps users create, track, and manage daily tasks efficiently with reminders,
 ## Data Source
 
 - **Type**: Multi-user input
-- **Database**: Firebase Firestore (NoSQL cloud database)
+- **Database**: Firebase Realtime Database (NoSQL Cloud Database)
 - **Difficulty**: Medium
 - This allows multiple registered users to create, update, and sync tasks in real time.
 
@@ -34,5 +35,5 @@ It helps users create, track, and manage daily tasks efficiently with reminders,
 
 - Users can filter tasks by priority (High, Medium, Low)
 - Users can search tasks by keywords
-- Users can organize tasks into categories (e.g., Work, Personal, School)
+- Users can organize tasks into categories (e.g. Work, Personal, School)
 - Users can view completed tasks in a history/archive section
