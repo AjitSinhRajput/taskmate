@@ -6,12 +6,12 @@ import { Link } from "expo-router";
 import { onValue, ref } from "firebase/database";
 import React, { useEffect, useState } from "react";
 import {
-    FlatList,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface Task {
@@ -30,7 +30,7 @@ export default function HomeScreen() {
   const isDark = theme === "dark";
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Fetch tasks and sort by most recent modification or creation
+  // Fetch tasks and sort by most recent modification or creation feature
   useEffect(() => {
     const tasksRef = ref(db, "tasks/");
     const unsubscribe = onValue(tasksRef, (snapshot) => {
