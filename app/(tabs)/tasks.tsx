@@ -25,6 +25,10 @@ interface Task {
 export default function TasksScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [visibleModal, setVisibleModal] = useState(false);
+  const [filter, setFilter] = useState<"All" | "High" | "Medium" | "Low">(
+    "All"
+  );
+
   const { theme } = useColorScheme();
   const isDark = theme === "dark";
 
@@ -38,7 +42,6 @@ export default function TasksScreen() {
           id: key,
           ...data[key],
         }));
-        // console.log("Fetched tasks:", list);
         setTasks(list);
       } else {
         setTasks([]);
@@ -65,6 +68,7 @@ export default function TasksScreen() {
     });
   };
 
+  // ✅ Priority colors for both badges and filters
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "High":
@@ -74,9 +78,20 @@ export default function TasksScreen() {
       case "Low":
         return "#2ecc71";
       default:
-        return "#ccc";
+        return Colors[theme].tint;
     }
   };
+
+  const filters: ("All" | "High" | "Medium" | "Low")[] = [
+    "All",
+    "High",
+    "Medium",
+    "Low",
+  ];
+
+  // ✅ Filter tasks based on selected priority
+  const filteredTasks =
+    filter === "All" ? tasks : tasks.filter((t) => t.priority === filter);
 
   return (
     <View
@@ -86,14 +101,62 @@ export default function TasksScreen() {
         TaskMate
       </Text>
 
+      {/* ✅ Filter Bar */}
+      <View style={styles.filterRow}>
+        {filters.map((item) => {
+          const bgColor =
+            item === "All"
+              ? filter === "All"
+                ? Colors[theme].tint
+                : isDark
+                ? "#2a2a2a"
+                : "#e0e0e0"
+              : getPriorityColor(item);
+
+          const textColor =
+            item === "All"
+              ? filter === "All"
+                ? Colors[theme].background
+                : isDark
+                ? "#fff"
+                : "#333"
+              : item === "Medium"
+              ? "#000" // better contrast for yellow
+              : "#fff";
+
+          return (
+            <TouchableOpacity
+              key={item}
+              onPress={() => setFilter(item)}
+              style={[
+                styles.filterBtn,
+                {
+                  backgroundColor:
+                    filter === item ? bgColor : isDark ? "#2a2a2a" : "#e0e0e0",
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color: filter === item ? textColor : isDark ? "#fff" : "#333",
+                  fontWeight: filter === item ? "700" : "500",
+                }}
+              >
+                {item}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* ✅ Tasks list */}
       <FlatList
-        data={tasks}
+        data={filteredTasks}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingBottom: 100 }}
         renderItem={({ item }) => {
           const createdDate = new Date(item.createdAt);
           const modifiedDate = new Date(item.modifiedAt);
-
           const isModified =
             item.modifiedAt && item.modifiedAt !== item.createdAt;
 
@@ -111,12 +174,10 @@ export default function TasksScreen() {
                 },
               ]}
             >
-              {/* Title */}
               <Text style={[styles.taskTitle, { color: Colors[theme].text }]}>
                 {item.title}
               </Text>
 
-              {/* Description */}
               <Text
                 style={[
                   styles.taskDescription,
@@ -131,7 +192,6 @@ export default function TasksScreen() {
                   : "No description added"}
               </Text>
 
-              {/* Footer row: Priority badge + date */}
               <View style={styles.footerRow}>
                 <View
                   style={[
@@ -194,12 +254,26 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
 
+  filterRow: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    marginBottom: 12,
+    marginHorizontal: 10,
+  },
+
+  filterBtn: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: "center",
+  },
+
   taskCard: {
     padding: 16,
     marginHorizontal: 16,
     marginVertical: 10,
     borderRadius: 12,
-    // ✅ Light shadow for light theme, stronger elevation for Android
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -207,38 +281,20 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
-  taskTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-
-  taskDescription: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
-
+  taskTitle: { fontSize: 16, fontWeight: "600", marginBottom: 4 },
+  taskDescription: { fontSize: 14, marginBottom: 10 },
   footerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   priorityBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
-
-  priorityText: {
-    fontWeight: "600",
-    fontSize: 12,
-  },
-
-  metaText: {
-    fontSize: 12,
-  },
-
+  priorityText: { fontWeight: "600", fontSize: 12 },
+  metaText: { fontSize: 12 },
   fab: {
     position: "absolute",
     right: 20,
