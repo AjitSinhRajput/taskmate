@@ -121,7 +121,7 @@ export default function TasksScreen() {
                 ? "#fff"
                 : "#333"
               : item === "Medium"
-              ? "#000" // better contrast for yellow
+              ? "#000"
               : "#fff";
 
           return (
