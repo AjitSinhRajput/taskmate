@@ -32,7 +32,7 @@ export default function TasksScreen() {
   const { theme } = useColorScheme();
   const isDark = theme === "dark";
 
-  // ✅ Live fetch
+  // Live fetch
   useEffect(() => {
     const tasksRef = ref(db, "tasks/");
     const unsubscribe = onValue(tasksRef, (snapshot) => {
@@ -50,7 +50,7 @@ export default function TasksScreen() {
     return () => unsubscribe();
   }, []);
 
-  // ✅ Add new task
+  // Add new task
   const handleSave = async (
     title: string,
     description: string,
@@ -68,7 +68,7 @@ export default function TasksScreen() {
     });
   };
 
-  // ✅ Priority colors for both badges and filters
+  // Priority colors for both badges and filters
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "High":
@@ -89,7 +89,7 @@ export default function TasksScreen() {
     "Low",
   ];
 
-  // ✅ Filter tasks based on selected priority
+  // Filter tasks based on selected priority
   const filteredTasks =
     filter === "All" ? tasks : tasks.filter((t) => t.priority === filter);
 
@@ -101,7 +101,7 @@ export default function TasksScreen() {
         TaskMate
       </Text>
 
-      {/* ✅ Filter Bar */}
+      {/* Filter Bar */}
       <View style={styles.filterRow}>
         {filters.map((item) => {
           const bgColor =
@@ -149,7 +149,7 @@ export default function TasksScreen() {
         })}
       </View>
 
-      {/* ✅ Tasks list */}
+      {/* Tasks list */}
       <FlatList
         data={filteredTasks}
         keyExtractor={(item) => item.id}

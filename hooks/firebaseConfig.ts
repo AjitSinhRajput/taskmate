@@ -15,5 +15,5 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// ✅ Use Realtime DB instead of Firestore
+// Use Realtime DB instead of Firestore
 export const db = getDatabase(app);

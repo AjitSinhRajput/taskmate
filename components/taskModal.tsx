@@ -1,17 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-  useColorScheme,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
+    useColorScheme,
 } from "react-native";
 
 interface TaskModalProps {
@@ -74,7 +74,7 @@ export default function TaskModal({
     setError(newErrors);
     if (!valid) return;
 
-    // ✅ Pass cleaned values to onSave
+    // Pass cleaned values to onSave
     onSave(
       cleanedTitle,
       cleanedDescription,

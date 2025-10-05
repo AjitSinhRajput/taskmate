@@ -8,7 +8,7 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
-  const { theme } = useColorScheme(); // ✅ destructure theme instead of using directly
+  const { theme } = useColorScheme(); // destructure theme instead of using directly
 
   return (
     <Tabs

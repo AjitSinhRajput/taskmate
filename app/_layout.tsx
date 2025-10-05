@@ -1,9 +1,9 @@
 import { Colors } from "@/constants/theme";
 import { ThemeProvider, useColorScheme } from "@/hooks/use-color-scheme";
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider as NavThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider as NavThemeProvider,
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -34,7 +34,7 @@ function RootStack() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>
 
-          {/* ✅ Dynamic StatusBar */}
+          {/* Dynamic StatusBar */}
           <StatusBar
             style={isDark ? "light" : "dark"}
             backgroundColor={
