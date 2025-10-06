@@ -225,7 +225,6 @@ const styles = StyleSheet.create({
     width: "90%",
     borderRadius: 12,
     padding: 16,
-    // marginTo: 20,
     marginBottom: 20,
 
     elevation: 4,
