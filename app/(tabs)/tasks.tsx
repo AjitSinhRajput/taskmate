@@ -2,9 +2,10 @@ import { Colors } from "@/constants/theme";
 import { db } from "@/hooks/firebaseConfig";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
-import { onValue, push, ref } from "firebase/database";
+import { onValue, push, ref, remove, update } from "firebase/database";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -28,11 +29,12 @@ export default function TasksScreen() {
   const [filter, setFilter] = useState<"All" | "High" | "Medium" | "Low">(
     "All"
   );
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const { theme } = useColorScheme();
   const isDark = theme === "dark";
 
-  // Live fetch
+  // ✅ Live fetch tasks from Firebase
   useEffect(() => {
     const tasksRef = ref(db, "tasks/");
     const unsubscribe = onValue(tasksRef, (snapshot) => {
@@ -50,7 +52,7 @@ export default function TasksScreen() {
     return () => unsubscribe();
   }, []);
 
-  // Add new task
+  // ✅ Add or update task
   const handleSave = async (
     title: string,
     description: string,
@@ -59,16 +61,40 @@ export default function TasksScreen() {
     if (!title.trim()) return;
     const timestamp = new Date().toISOString();
 
-    await push(ref(db, "tasks/"), {
-      title,
-      description,
-      priority,
-      createdAt: timestamp,
-      modifiedAt: timestamp,
-    });
+    if (editingTask) {
+      // Update existing task
+      await update(ref(db, `tasks/${editingTask.id}`), {
+        title,
+        description,
+        priority,
+        modifiedAt: timestamp,
+      });
+      setEditingTask(null);
+    } else {
+      // Add new task
+      await push(ref(db, "tasks/"), {
+        title,
+        description,
+        priority,
+        createdAt: timestamp,
+        modifiedAt: timestamp,
+      });
+    }
   };
 
-  // Priority colors for both badges and filters
+  // ✅ Delete a task with confirmation
+  const handleDelete = (taskId: string) => {
+    Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => await remove(ref(db, `tasks/${taskId}`)),
+      },
+    ]);
+  };
+
+  // ✅ Priority color logic
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "High":
@@ -89,7 +115,7 @@ export default function TasksScreen() {
     "Low",
   ];
 
-  // Filter tasks based on selected priority
+  // ✅ Filter tasks by selected priority
   const filteredTasks =
     filter === "All" ? tasks : tasks.filter((t) => t.priority === filter);
 
@@ -101,7 +127,7 @@ export default function TasksScreen() {
         TaskMate
       </Text>
 
-      {/* Filter Bar */}
+      {/* ✅ Filter Bar */}
       <View style={styles.filterRow}>
         {filters.map((item) => {
           const bgColor =
@@ -149,7 +175,7 @@ export default function TasksScreen() {
         })}
       </View>
 
-      {/* Tasks list */}
+      {/* ✅ Task List */}
       <FlatList
         data={filteredTasks}
         keyExtractor={(item) => item.id}
@@ -157,8 +183,7 @@ export default function TasksScreen() {
         renderItem={({ item }) => {
           const createdDate = new Date(item.createdAt);
           const modifiedDate = new Date(item.modifiedAt);
-          const isModified =
-            item.modifiedAt && item.modifiedAt !== item.createdAt;
+          const isModified = item.modifiedAt !== item.createdAt;
 
           const displayLabel = isModified ? "Modified" : "Created";
           const displayDate = isModified ? modifiedDate : createdDate;
@@ -174,10 +199,70 @@ export default function TasksScreen() {
                 },
               ]}
             >
-              <Text style={[styles.taskTitle, { color: Colors[theme].text }]}>
-                {item.title}
-              </Text>
+              {/* Header with title + edit/delete icons */}
+              <View style={styles.taskHeader}>
+                <Text style={[styles.taskTitle, { color: Colors[theme].text }]}>
+                  {item.title}
+                </Text>
+                <View style={styles.iconRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.actionBtnOutline,
+                      {
+                        borderColor: Colors.common.success, // success green
+                      },
+                    ]}
+                    onPress={() => {
+                      setEditingTask(item);
+                      setVisibleModal(true);
+                    }}
+                  >
+                    <Ionicons
+                      name="create-outline"
+                      size={16}
+                      color={Colors[theme].text}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text
+                      style={{
+                        color: Colors[theme].text,
+                        fontWeight: "600",
+                        fontSize: 13,
+                      }}
+                    >
+                      Edit
+                    </Text>
+                  </TouchableOpacity>
 
+                  <TouchableOpacity
+                    style={[
+                      styles.actionBtnOutline,
+                      {
+                        borderColor: Colors.common.error, // error red
+                      },
+                    ]}
+                    onPress={() => handleDelete(item.id)}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={16}
+                      color={Colors[theme].text}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text
+                      style={{
+                        color: Colors[theme].text,
+                        fontWeight: "600",
+                        fontSize: 13,
+                      }}
+                    >
+                      Delete
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Description */}
               <Text
                 style={[
                   styles.taskDescription,
@@ -192,6 +277,7 @@ export default function TasksScreen() {
                   : "No description added"}
               </Text>
 
+              {/* Footer: Priority + Date */}
               <View style={styles.footerRow}>
                 <View
                   style={[
@@ -208,14 +294,10 @@ export default function TasksScreen() {
                     {item.priority}
                   </Text>
                 </View>
-
                 <Text style={[styles.metaText, { color: Colors[theme].text }]}>
                   {`${displayLabel}: ${displayDate.toLocaleDateString()} ${displayDate.toLocaleTimeString(
                     [],
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }
+                    { hour: "2-digit", minute: "2-digit" }
                   )}`}
                 </Text>
               </View>
@@ -224,21 +306,28 @@ export default function TasksScreen() {
         }}
       />
 
-      {/* Floating Add Button */}
+      {/* ✅ Floating Add Button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: Colors[theme].tint }]}
-        onPress={() => setVisibleModal(true)}
+        onPress={() => {
+          setEditingTask(null);
+          setVisibleModal(true);
+        }}
       >
         <Ionicons name="add" size={36} color={Colors[theme].background} />
       </TouchableOpacity>
 
-      {/* Modal */}
+      {/* ✅ Modal */}
       <TaskModal
         visible={visibleModal}
-        onClose={() => setVisibleModal(false)}
-        onSave={(title, description, priority) => {
-          handleSave(title, description, priority);
+        onClose={() => {
+          setVisibleModal(false);
+          setEditingTask(null);
         }}
+        onSave={(title, description, priority) =>
+          handleSave(title, description, priority)
+        }
+        taskToEdit={editingTask}
       />
     </View>
   );
@@ -281,20 +370,72 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
+  taskHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  iconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    marginLeft: 8,
+  },
+
+  actionText: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginLeft: 4,
+    color: "#fff",
+  },
+  actionBtnOutline: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    marginLeft: 8,
+    borderWidth: 1.8,
+    backgroundColor: "transparent",
+  },
+
+  actionBtnFilled: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    marginLeft: 8,
+  },
+
   taskTitle: { fontSize: 16, fontWeight: "600", marginBottom: 4 },
   taskDescription: { fontSize: 14, marginBottom: 10 },
+
   footerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   priorityBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
+
   priorityText: { fontWeight: "600", fontSize: 12 },
   metaText: { fontSize: 12 },
+
   fab: {
     position: "absolute",
     right: 20,
