@@ -85,7 +85,6 @@ export default function SearchFilter({
 
   return (
     <View style={styles.wrapper}>
-      {/* 🔍 Search Bar */}
       <View
         style={[
           styles.searchContainer,
