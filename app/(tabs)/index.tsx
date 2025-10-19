@@ -167,7 +167,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={[styles.viewAllButton, { backgroundColor: "#4a90e2" }]}
             >
-              <Text style={styles.viewAllText}>View All</Text>
+              <Text style={[styles.viewAllText, {color: Colors[theme].text}]}>View All</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -249,5 +249,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 8,
   },
-  viewAllText: { color: "#fff", fontWeight: "600" },
+  viewAllText: {  fontWeight: "600" },
 });
