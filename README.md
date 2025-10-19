@@ -69,7 +69,7 @@ It helps users create, track, and manage daily tasks efficiently with reminders,
 - Improved task validation and form error handling
 - UI refinements and navigation polish
 
-**Status:** 🟡 In progress  
+**Status:** ✅ Completed and merged into `main`
 **Tag:** `sprint-2`
 
 ---
@@ -85,7 +85,7 @@ It helps users create, track, and manage daily tasks efficiently with reminders,
 - Display categorized task summaries on the home screen
 - Improved accessibility and layout testing
 
-**Status:** ⏳ Planned  
+**Status:** 🟡 In progress  
 **Tag:** `sprint-3`
 
 ---
@@ -101,5 +101,5 @@ It helps users create, track, and manage daily tasks efficiently with reminders,
 - Add overall task completion statistics
 - Conduct final QA, performance, and defect testing
 
-**Status:** 🔜 Scheduled for final sprint  
+**Status:** ⏳ Planned  
 **Tag:** `sprint-4`

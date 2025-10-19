@@ -1,17 +1,18 @@
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
-    useColorScheme,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 interface TaskModalProps {
@@ -22,45 +23,48 @@ interface TaskModalProps {
     description: string,
     priority: "High" | "Medium" | "Low"
   ) => void;
+  taskToEdit?: {
+    title: string;
+    description: string;
+    priority: "High" | "Medium" | "Low";
+  } | null;
 }
 
 export default function TaskModal({
   visible,
   onClose,
   onSave,
+  taskToEdit,
 }: TaskModalProps) {
+  const { theme } = useColorScheme();
+  const isDark = theme === "dark";
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"High" | "Medium" | "Low" | "">("");
   const [error, setError] = useState({ title: "", priority: "" });
   const [success, setSuccess] = useState(false);
 
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  // Reset form when modal closes
   useEffect(() => {
-    if (!visible) {
+    if (taskToEdit && visible) {
+      setTitle(taskToEdit.title || "");
+      setDescription(taskToEdit.description || "");
+      setPriority(taskToEdit.priority || "");
+    } else if (!visible) {
       setTitle("");
       setDescription("");
       setPriority("");
       setError({ title: "", priority: "" });
       setSuccess(false);
     }
-  }, [visible]);
+  }, [taskToEdit, visible]);
 
   const handleSave = () => {
-    // Trim and clean up user input
-    const cleanedTitle = title
-      .replace(/^[\s\n]+|[\s\n]+$/g, "") // remove leading/trailing spaces/newlines
-      .replace(/\s{2,}/g, " "); // collapse multiple spaces inside text
+    const cleanedTitle = title.trim();
+    const cleanedDescription = description.trim();
 
-    const cleanedDescription = description
-      .replace(/^[\s\n]+|[\s\n]+$/g, "") // remove leading/trailing newlines/spaces
-      .replace(/\n{2,}/g, "\n"); // collapse multiple blank lines
-
-    let valid = true;
     const newErrors = { title: "", priority: "" };
+    let valid = true;
 
     if (!cleanedTitle) {
       newErrors.title = "Title is required!";
@@ -74,13 +78,7 @@ export default function TaskModal({
     setError(newErrors);
     if (!valid) return;
 
-    // Pass cleaned values to onSave
-    onSave(
-      cleanedTitle,
-      cleanedDescription,
-      priority as "High" | "Medium" | "Low"
-    );
-
+    onSave(cleanedTitle, cleanedDescription, priority as any);
     setSuccess(true);
 
     setTimeout(() => {
@@ -91,12 +89,20 @@ export default function TaskModal({
 
   const getPriorityColor = (p: string, selected: boolean) => {
     const colors = {
-      High: selected ? "#e74c3c" : "#f8d7da",
-      Medium: selected ? "#f1c40f" : "#fff3cd",
-      Low: selected ? "#2ecc71" : "#d4edda",
+      High: selected ? "#e74c3c" : isDark ? "#4a2a2a" : "#f8d7da",
+      Medium: selected ? "#f1c40f" : isDark ? "#665c1a" : "#fff3cd",
+      Low: selected ? "#2ecc71" : isDark ? "#1d442b" : "#d4edda",
     };
     return colors[p as keyof typeof colors];
   };
+
+  const backgroundColor = Colors[theme].background;
+  const textColor = Colors[theme].text;
+  const borderColor = isDark ? "#333" : "#ccc";
+  const placeholderColor = isDark ? "#aaa" : "#777";
+  const subTextColor = isDark ? "#999" : "#555";
+
+  const isEditing = !!taskToEdit;
 
   return (
     <Modal
@@ -119,16 +125,12 @@ export default function TaskModal({
             <View
               style={[
                 styles.modalContent,
-                { backgroundColor: isDark ? "#1e1e1e" : "#fff" },
+                { backgroundColor: backgroundColor },
               ]}
             >
               {!success && (
                 <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                  <Ionicons
-                    name="close"
-                    size={24}
-                    color={isDark ? "#fff" : "#000"}
-                  />
+                  <Ionicons name="close" size={24} color={textColor} />
                 </TouchableOpacity>
               )}
 
@@ -137,17 +139,19 @@ export default function TaskModal({
                   <Ionicons
                     name="checkmark-circle"
                     size={90}
-                    color="green"
+                    color={Colors.common.success}
                     style={{ marginBottom: 12 }}
                   />
                   <Text
                     style={{
-                      color: isDark ? "#fff" : "#000",
+                      color: textColor,
                       fontSize: 18,
                       fontWeight: "600",
                     }}
                   >
-                    Task added successfully!
+                    {isEditing
+                      ? "Task updated successfully!"
+                      : "Task added successfully!"}
                   </Text>
                 </View>
               ) : (
@@ -155,37 +159,35 @@ export default function TaskModal({
                   <Text
                     style={[
                       styles.modalHeading,
-                      { color: isDark ? "#fff" : "#000" },
+                      { color: textColor, marginTop: 6 },
                     ]}
                   >
-                    Add Task
+                    {isEditing ? "Edit Task" : "Add Task"}
                   </Text>
 
                   {/* Title */}
                   <TextInput
                     placeholder="Title"
                     value={title}
-                    onChangeText={
-                      (text) => setTitle(text.slice(0, 50)) // limit to 50 chars
-                    }
+                    onChangeText={(text) => setTitle(text.slice(0, 50))}
                     style={[
                       styles.input,
                       {
-                        borderColor: error.title
-                          ? "red"
-                          : isDark
-                          ? "#444"
-                          : "#ccc",
-                        color: isDark ? "#fff" : "#000",
+                        borderColor: error.title ? "red" : borderColor,
+                        color: textColor,
                       },
                     ]}
-                    placeholderTextColor="#888"
+                    placeholderTextColor={placeholderColor}
                     maxLength={50}
                   />
                   {error.title ? (
-                    <Text style={styles.errorText}>{error.title}</Text>
+                    <Text style={[styles.errorText, { color: "red" }]}>
+                      {error.title}
+                    </Text>
                   ) : (
-                    <Text style={styles.charCount}>{title.length}/50</Text>
+                    <Text style={[styles.charCount, { color: subTextColor }]}>
+                      {title.length}/50
+                    </Text>
                   )}
 
                   {/* Description */}
@@ -193,7 +195,7 @@ export default function TaskModal({
                     <Text
                       style={{
                         fontSize: 12,
-                        color: isDark ? "#999" : "#666",
+                        color: subTextColor,
                         marginBottom: 4,
                       }}
                     >
@@ -202,8 +204,8 @@ export default function TaskModal({
                     <TextInput
                       placeholder="Add a short description..."
                       value={description}
-                      onChangeText={
-                        (text) => setDescription(text.slice(0, 200)) // limit to 200 chars
+                      onChangeText={(text) =>
+                        setDescription(text.slice(0, 200))
                       }
                       multiline
                       numberOfLines={3}
@@ -212,14 +214,14 @@ export default function TaskModal({
                         styles.input,
                         {
                           height: 80,
-                          borderColor: isDark ? "#444" : "#ccc",
-                          color: isDark ? "#fff" : "#000",
+                          borderColor,
+                          color: textColor,
                         },
                       ]}
-                      placeholderTextColor="#888"
+                      placeholderTextColor={placeholderColor}
                       maxLength={200}
                     />
-                    <Text style={styles.charCount}>
+                    <Text style={[styles.charCount, { color: subTextColor }]}>
                       {description.length}/200
                     </Text>
                   </View>
@@ -229,7 +231,7 @@ export default function TaskModal({
                     <Text
                       style={{
                         fontSize: 12,
-                        color: isDark ? "#999" : "#666",
+                        color: subTextColor,
                         marginBottom: 6,
                       }}
                     >
@@ -247,7 +249,7 @@ export default function TaskModal({
                                 priority === p
                               ),
                               borderWidth: priority === p ? 0 : 1,
-                              borderColor: isDark ? "#444" : "#ccc",
+                              borderColor,
                             },
                           ]}
                           onPress={() => setPriority(p as any)}
@@ -258,8 +260,8 @@ export default function TaskModal({
                                 priority === p
                                   ? "#fff"
                                   : isDark
-                                  ? "#000"
-                                  : "#222",
+                                  ? "#eee"
+                                  : "#111",
                               fontWeight: priority === p ? "600" : "400",
                             }}
                           >
@@ -278,16 +280,40 @@ export default function TaskModal({
                   {/* Buttons */}
                   <View style={styles.modalButtons}>
                     <TouchableOpacity
-                      style={[styles.button, { backgroundColor: "#666" }]}
+                      style={[
+                        styles.button,
+                        {
+                          backgroundColor: isDark ? Colors.dark.icon : "#ddd",
+                        },
+                      ]}
                       onPress={onClose}
                     >
-                      <Text style={{ color: "#fff" }}>Cancel</Text>
+                      <Text
+                        style={{
+                          color: Colors[theme].text,
+                          fontWeight: "500",
+                        }}
+                      >
+                        Cancel
+                      </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.button, { backgroundColor: "#4a90e2" }]}
+                      style={[
+                        styles.button,
+                        {
+                          backgroundColor: Colors[theme].tint,
+                        },
+                      ]}
                       onPress={handleSave}
                     >
-                      <Text style={{ color: "#fff" }}>Save</Text>
+                      <Text
+                        style={{
+                          color: Colors[theme].background,
+                          fontWeight: "500",
+                        }}
+                      >
+                        {isEditing ? "Update" : "Save"}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </>
@@ -328,7 +354,6 @@ const styles = StyleSheet.create({
   charCount: {
     fontSize: 11,
     textAlign: "right",
-    color: "#888",
   },
   priorityRow: {
     flexDirection: "row",
@@ -354,7 +379,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   errorText: {
-    color: "red",
     fontSize: 12,
     marginTop: -2,
     marginBottom: 4,
