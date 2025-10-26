@@ -38,7 +38,7 @@ export default function TasksScreen() {
   const { theme } = useColorScheme();
   const isDark = theme === "dark";
 
-  // ✅ Live fetch tasks from Firebase
+  //  Live fetch tasks from Firebase
   useEffect(() => {
     const tasksRef = ref(db, "tasks/");
     const unsubscribe = onValue(tasksRef, (snapshot) => {
@@ -57,7 +57,7 @@ export default function TasksScreen() {
     return () => unsubscribe();
   }, []);
 
-  // ✅ Add or update task
+  //  Add or update task
   const handleSave = async (
     title: string,
     description: string,
@@ -87,7 +87,7 @@ export default function TasksScreen() {
     }
   };
 
-  // ✅ Delete a task with confirmation
+  //  Delete a task with confirmation
   const handleDelete = (taskId: string) => {
     Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
       { text: "Cancel", style: "cancel" },
@@ -99,7 +99,7 @@ export default function TasksScreen() {
     ]);
   };
 
-  // ✅ Priority color logic
+  //  Priority color logic
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "High":
@@ -120,7 +120,7 @@ export default function TasksScreen() {
     "Low",
   ];
 
-  // ✅ Filter tasks by selected priority
+  //  Filter tasks by selected priority
   const filteredTasks = tasks.filter((t) => {
     const matchesPriority = filter === "All" || t.priority === filter;
     const matchesSearch =
@@ -137,54 +137,6 @@ export default function TasksScreen() {
         TaskMate
       </Text>
 
-      {/* ✅ Filter Bar */}
-      {/* <View style={styles.filterRow}>
-        {filters.map((item) => {
-          const bgColor =
-            item === "All"
-              ? filter === "All"
-                ? Colors[theme].tint
-                : isDark
-                ? "#2a2a2a"
-                : "#e0e0e0"
-              : getPriorityColor(item);
-
-          const textColor =
-            item === "All"
-              ? filter === "All"
-                ? Colors[theme].background
-                : isDark
-                ? "#fff"
-                : "#333"
-              : item === "Medium"
-              ? "#000"
-              : "#fff";
-
-          return (
-            <TouchableOpacity
-              key={item}
-              onPress={() => setFilter(item)}
-              style={[
-                styles.filterBtn,
-                {
-                  backgroundColor:
-                    filter === item ? bgColor : isDark ? "#2a2a2a" : "#e0e0e0",
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  color: filter === item ? textColor : isDark ? "#fff" : "#333",
-                  fontWeight: filter === item ? "700" : "500",
-                }}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View> */}
-      {/* 🔍 Search + Filter */}
       <SearchFilter
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -192,7 +144,7 @@ export default function TasksScreen() {
         onFilterChange={setFilter}
       />
 
-      {/* ✅ Task List */}
+      {/*  Task List */}
       {isLoading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color={Colors[theme].tint} />
@@ -200,7 +152,9 @@ export default function TasksScreen() {
       ) : filteredTasks.length === 0 ? (
         <View style={styles.emptyStateContainer}>
           <Ionicons
-            name={searchQuery.trim().length > 0 ? "search-outline" : "list-outline"}
+            name={
+              searchQuery.trim().length > 0 ? "search-outline" : "list-outline"
+            }
             size={44}
             color={Colors[theme].tint}
             style={{ marginBottom: 12 }}
@@ -243,7 +197,6 @@ export default function TasksScreen() {
                   },
                 ]}
               >
-                {/* Header with title + edit/delete icons */}
                 <View style={styles.taskHeader}>
                   <Text
                     style={[styles.taskTitle, { color: Colors[theme].text }]}
@@ -355,7 +308,7 @@ export default function TasksScreen() {
         />
       )}
 
-      {/* ✅ Floating Add Button */}
+      {/*  Floating Add Button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: Colors[theme].tint }]}
         onPress={() => {
@@ -366,7 +319,7 @@ export default function TasksScreen() {
         <Ionicons name="add" size={36} color={Colors[theme].background} />
       </TouchableOpacity>
 
-      {/* ✅ Modal */}
+      {/*  Modal */}
       <TaskModal
         visible={visibleModal}
         onClose={() => {
