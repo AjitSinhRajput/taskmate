@@ -1,5 +1,4 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import React from "react";
 import { SafeAreaView, StyleSheet, Switch, Text, View } from "react-native";
 import { Colors } from "../../constants/theme";
 
