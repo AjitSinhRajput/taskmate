@@ -1,7 +1,8 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useEffect, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -21,12 +22,14 @@ interface TaskModalProps {
   onSave: (
     title: string,
     description: string,
-    priority: "High" | "Medium" | "Low"
+    priority: "High" | "Medium" | "Low",
+    dueDate: Date
   ) => void;
   taskToEdit?: {
     title: string;
     description: string;
     priority: "High" | "Medium" | "Low";
+    dueDate?: string;
   } | null;
 }
 
@@ -42,7 +45,9 @@ export default function TaskModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"High" | "Medium" | "Low" | "">("");
-  const [error, setError] = useState({ title: "", priority: "" });
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [error, setError] = useState({ title: "", priority: "", dueDate: "" });
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
@@ -50,11 +55,13 @@ export default function TaskModal({
       setTitle(taskToEdit.title || "");
       setDescription(taskToEdit.description || "");
       setPriority(taskToEdit.priority || "");
+      setDueDate(taskToEdit.dueDate ? new Date(taskToEdit.dueDate) : null);
     } else if (!visible) {
       setTitle("");
       setDescription("");
       setPriority("");
-      setError({ title: "", priority: "" });
+      setDueDate(null);
+      setError({ title: "", priority: "", dueDate: "" });
       setSuccess(false);
     }
   }, [taskToEdit, visible]);
@@ -63,7 +70,7 @@ export default function TaskModal({
     const cleanedTitle = title.trim();
     const cleanedDescription = description.trim();
 
-    const newErrors = { title: "", priority: "" };
+    const newErrors = { title: "", priority: "", dueDate: "" };
     let valid = true;
 
     if (!cleanedTitle) {
@@ -74,11 +81,15 @@ export default function TaskModal({
       newErrors.priority = "Select a priority!";
       valid = false;
     }
+    if (!dueDate) {
+      newErrors.dueDate = "Due date is required!";
+      valid = false;
+    }
 
     setError(newErrors);
     if (!valid) return;
 
-    onSave(cleanedTitle, cleanedDescription, priority as any);
+    onSave(cleanedTitle, cleanedDescription, priority as any, dueDate!);
     setSuccess(true);
 
     setTimeout(() => {
@@ -166,6 +177,9 @@ export default function TaskModal({
                   </Text>
 
                   {/* Title */}
+                  <Text style={{ fontSize: 12, color: subTextColor }}>
+                    Title <Text style={{ color: "red" }}>*</Text>
+                  </Text>
                   <TextInput
                     placeholder="Title"
                     value={title}
@@ -235,7 +249,7 @@ export default function TaskModal({
                         marginBottom: 6,
                       }}
                     >
-                      Priority
+                      Priority <Text style={{ color: "red" }}>*</Text>
                     </Text>
                     <View style={styles.priorityRow}>
                       {["High", "Medium", "Low"].map((p) => (
@@ -275,6 +289,53 @@ export default function TaskModal({
                         {error.priority}
                       </Text>
                     ) : null}
+                  </View>
+
+                  {/* Due Date */}
+                  <View style={{ marginTop: 10 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: subTextColor,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Due Date <Text style={{ color: "red" }}>*</Text>
+                    </Text>
+                    <TouchableOpacity
+                      style={[
+                        styles.input,
+                        {
+                          borderColor:
+                            error.dueDate && !dueDate ? "red" : borderColor,
+                          paddingVertical: 12,
+                          justifyContent: "center",
+                        },
+                      ]}
+                      onPress={() => setShowPicker(true)}
+                    >
+                      <Text style={{ color: textColor }}>
+                        {dueDate
+                          ? dueDate.toLocaleString()
+                          : "Select due date and time"}
+                      </Text>
+                    </TouchableOpacity>
+                    {showPicker && (
+                      <DateTimePicker
+                        value={dueDate || new Date()}
+                        mode="datetime"
+                        minimumDate={new Date()}
+                        onChange={(event, selectedDate) => {
+                          setShowPicker(false);
+                          if (selectedDate) setDueDate(selectedDate);
+                        }}
+                      />
+                    )}
+                    {error.dueDate && !dueDate && (
+                      <Text style={[styles.errorText, { marginTop: 4 }]}>
+                        {error.dueDate}
+                      </Text>
+                    )}
                   </View>
 
                   {/* Buttons */}
@@ -382,6 +443,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: -2,
     marginBottom: 4,
+    color: "red",
   },
   closeButton: {
     position: "absolute",

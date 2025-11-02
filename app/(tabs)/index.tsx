@@ -4,7 +4,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { onValue, ref } from "firebase/database";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FlatList,
   SafeAreaView,
@@ -167,7 +167,9 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={[styles.viewAllButton, { backgroundColor: "#4a90e2" }]}
             >
-              <Text style={[styles.viewAllText, {color: Colors[theme].text}]}>View All</Text>
+              <Text style={[styles.viewAllText, { color: Colors[theme].text }]}>
+                View All
+              </Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -249,5 +251,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 8,
   },
-  viewAllText: {  fontWeight: "600" },
+  viewAllText: { fontWeight: "600" },
 });
