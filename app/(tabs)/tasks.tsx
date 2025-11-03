@@ -8,7 +8,6 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import { onValue, push, ref, remove, update } from "firebase/database";
 import { useEffect, useState } from "react";
-
 import {
   ActivityIndicator,
   Alert,
@@ -24,6 +23,7 @@ interface Task {
   title: string;
   description: string;
   priority: "High" | "Medium" | "Low";
+  category: "Work" | "Personal" | "School" | "Other";
   createdAt: string;
   modifiedAt: string;
   dueDate: string;
@@ -36,6 +36,9 @@ export default function TasksScreen() {
   const [filter, setFilter] = useState<"All" | "High" | "Medium" | "Low">(
     "All"
   );
+  const [categoryFilter, setCategoryFilter] = useState<
+    "All" | "Work" | "Personal" | "School" | "Other"
+  >("All");
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +48,7 @@ export default function TasksScreen() {
   const { theme } = useColorScheme();
   const isDark = theme === "dark";
 
-  // Fetch tasks
+  // Fetch tasks from Firebase
   useEffect(() => {
     const tasksRef = ref(db, "tasks/");
     const unsubscribe = onValue(tasksRef, (snapshot) => {
@@ -64,12 +67,13 @@ export default function TasksScreen() {
     return () => unsubscribe();
   }, []);
 
-  // Save / update
+  // Save or update task
   const handleSave = async (
     title: string,
     description: string,
     priority: "High" | "Medium" | "Low",
-    dueDate: Date
+    dueDate: Date,
+    category: "Work" | "Personal" | "School" | "Other"
   ) => {
     const timestamp = new Date().toISOString();
     let notificationId: string | null = null;
@@ -98,6 +102,7 @@ export default function TasksScreen() {
         title,
         description,
         priority,
+        category,
         dueDate: dueDate.toISOString(),
         modifiedAt: timestamp,
         notificationId,
@@ -108,14 +113,16 @@ export default function TasksScreen() {
         title,
         description,
         priority,
+        category,
+        dueDate: dueDate.toISOString(),
         createdAt: timestamp,
         modifiedAt: timestamp,
-        dueDate: dueDate.toISOString(),
         notificationId,
       });
     }
   };
 
+  // Delete task
   const handleDelete = (taskId: string) => {
     Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
       { text: "Cancel", style: "cancel" },
@@ -127,32 +134,50 @@ export default function TasksScreen() {
     ]);
   };
 
+  // Helpers
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "High":
-        return "#e74c3c";
-      case "Medium":
-        return "#f1c40f";
-      case "Low":
-        return "#2ecc71";
-      default:
-        return Colors[theme].tint;
-    }
+    const colors = {
+      High: "#e74c3c",
+      Medium: "#f1c40f",
+      Low: "#2ecc71",
+    };
+    return colors[priority as keyof typeof colors] || Colors[theme].tint;
   };
 
+  const getCategoryColor = (category: string) => {
+    const colors = {
+      Work: "#3498db",
+      Personal: "#9b59b6",
+      School: "#e67e22",
+      Other: "#16a085",
+    };
+    return colors[category as keyof typeof colors] || Colors[theme].tint;
+  };
+
+  const truncateText = (text: string, limit: number) =>
+    text.length > limit ? text.slice(0, limit) + "..." : text;
+
+  const isOverdue = (dueDate: string) => {
+    const now = new Date();
+    return new Date(dueDate) < now;
+  };
+
+  // Apply filters
   const filteredTasks = tasks.filter((t) => {
     const matchesPriority = filter === "All" || t.priority === filter;
+    const matchesCategory =
+      categoryFilter === "All" || t.category === categoryFilter;
     const matchesSearch =
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesPriority && matchesSearch;
+    return matchesPriority && matchesCategory && matchesSearch;
   });
 
   return (
     <View
       style={[styles.container, { backgroundColor: Colors[theme].background }]}
     >
-      <Text style={[styles.heading, { color: isDark ? "#fff" : "#222" }]}>
+      <Text style={[styles.heading, { color: Colors[theme].text }]}>
         TaskMate
       </Text>
 
@@ -161,6 +186,8 @@ export default function TasksScreen() {
         onSearchChange={setSearchQuery}
         filter={filter}
         onFilterChange={setFilter}
+        category={categoryFilter}
+        onCategoryChange={setCategoryFilter}
       />
 
       {isLoading ? (
@@ -186,14 +213,12 @@ export default function TasksScreen() {
           data={filteredTasks}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: 100 }}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           renderItem={({ item }) => {
-            const createdDate = new Date(item.createdAt);
-            const modifiedDate = new Date(item.modifiedAt);
-            const isModified = item.modifiedAt !== item.createdAt;
-
+            const overdue = isOverdue(item.dueDate);
             return (
               <TouchableOpacity
-                activeOpacity={0.8}
+                activeOpacity={0.85}
                 onPress={() => {
                   setSelectedTask(item);
                   setViewModalVisible(true);
@@ -203,17 +228,23 @@ export default function TasksScreen() {
                   style={[
                     styles.taskCard,
                     {
-                      backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
-                      borderWidth: isDark ? 0 : 1,
-                      borderColor: isDark ? "transparent" : "#e0e0e0",
+                      backgroundColor: isDark ? "#1f1f1f" : "#ffffff",
+                      borderWidth: isDark ? 0.8 : 1,
+                      borderColor: isDark ? "#2a2a2a" : "#e0e0e0",
+                      shadowColor: isDark ? "#000" : "#999",
+                      shadowOpacity: isDark ? 0.4 : 0.15,
+                      shadowRadius: 10,
+                      shadowOffset: { width: 0, height: 6 },
+                      elevation: 7,
                     },
                   ]}
                 >
+                  {/* Header */}
                   <View style={styles.taskHeader}>
                     <Text
                       style={[styles.taskTitle, { color: Colors[theme].text }]}
                     >
-                      {item.title}
+                      {truncateText(item.title, 22)}
                     </Text>
                     <View style={styles.iconRow}>
                       <TouchableOpacity
@@ -255,41 +286,74 @@ export default function TasksScreen() {
                     </View>
                   </View>
 
+                  {/* Description */}
                   <Text
                     style={[
                       styles.taskDescription,
                       {
                         color: Colors[theme].text,
                         fontStyle: !item.description ? "italic" : "normal",
+                        marginTop: 8,
                       },
                     ]}
                   >
-                    {item.description?.trim()
-                      ? item.description
-                      : "No description added"}
+                    {truncateText(
+                      item.description?.trim() || "No description added",
+                      70
+                    )}
                   </Text>
 
+                  {/* Footer */}
                   <View style={styles.footerRow}>
-                    <View
-                      style={[
-                        styles.priorityBadge,
-                        { backgroundColor: getPriorityColor(item.priority) },
-                      ]}
-                    >
-                      <Text
+                    <View style={styles.leftBadges}>
+                      <View
                         style={[
-                          styles.priorityText,
-                          { color: Colors.dark.background },
+                          styles.categoryBadge,
+                          { backgroundColor: getCategoryColor(item.category) },
                         ]}
                       >
-                        {item.priority}
-                      </Text>
+                        <Text
+                          style={{
+                            color: Colors.dark.background,
+                            fontSize: 11,
+                            fontWeight: "600",
+                          }}
+                        >
+                          {item.category}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.priorityBadge,
+                          { backgroundColor: getPriorityColor(item.priority) },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.priorityText,
+                            { color: Colors.dark.background },
+                          ]}
+                        >
+                          {item.priority}
+                        </Text>
+                      </View>
                     </View>
 
                     <Text
-                      style={[styles.metaText, { color: Colors[theme].text }]}
+                      style={[
+                        styles.metaText,
+                        {
+                          color: overdue
+                            ? Colors.common.error
+                            : Colors[theme].text,
+                          fontWeight: overdue ? "700" : "500",
+                        },
+                      ]}
                     >
-                      Due: {new Date(item.dueDate).toLocaleString()}
+                      {overdue
+                        ? "⚠️ Overdue"
+                        : "Due: " + new Date(item.dueDate).toLocaleString()}
                     </Text>
                   </View>
                 </View>
@@ -299,6 +363,7 @@ export default function TasksScreen() {
         />
       )}
 
+      {/* Floating Action Button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: Colors[theme].tint }]}
         onPress={() => {
@@ -309,17 +374,19 @@ export default function TasksScreen() {
         <Ionicons name="add" size={36} color={Colors[theme].background} />
       </TouchableOpacity>
 
+      {/* Modals */}
       <TaskModal
         visible={visibleModal}
         onClose={() => {
           setVisibleModal(false);
           setEditingTask(null);
         }}
-        onSave={(title, description, priority, dueDate) =>
-          handleSave(title, description, priority, dueDate)
+        onSave={(title, description, priority, dueDate, category) =>
+          handleSave(title, description, priority, dueDate, category)
         }
         taskToEdit={editingTask}
       />
+
       <TaskViewModal
         visible={viewModalVisible}
         onClose={() => {
@@ -350,13 +417,8 @@ const styles = StyleSheet.create({
   taskCard: {
     padding: 16,
     marginHorizontal: 16,
-    marginVertical: 10,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
+    marginVertical: 4,
+    borderRadius: 14,
   },
   taskHeader: {
     flexDirection: "row",
@@ -379,8 +441,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 8,
   },
-  priorityBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  leftBadges: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  categoryBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  priorityBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
   priorityText: { fontWeight: "600", fontSize: 12 },
   metaText: { fontSize: 12 },
   fab: {
@@ -392,6 +469,6 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 6,
+    elevation: 8,
   },
 });
