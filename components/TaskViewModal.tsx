@@ -10,23 +10,19 @@ import {
   View,
 } from "react-native";
 
+import { Task } from "../types/type";
+
 interface TaskViewModalProps {
   visible: boolean;
   onClose: () => void;
-  task?: {
-    title: string;
-    description: string;
-    priority: "High" | "Medium" | "Low";
-    category: "Work" | "Personal" | "School" | "Other";
-    dueDate: string;
-    createdAt: string;
-    modifiedAt: string;
-  } | null;
+  onComplete: () => void; // Still required by props but NOT used
+  task: Task | null;
 }
 
 export default function TaskViewModal({
   visible,
   onClose,
+  onComplete, // Not used anymore
   task,
 }: TaskViewModalProps) {
   const { theme } = useColorScheme();
@@ -34,7 +30,6 @@ export default function TaskViewModal({
 
   if (!task) return null;
 
-  const bgColor = Colors[theme].background;
   const textColor = Colors[theme].text;
   const subTextColor = Colors[theme].tabIconDefault;
   const cardColor = isDark ? "#1f1f1f" : "#ffffff";
@@ -43,33 +38,29 @@ export default function TaskViewModal({
   const createdDate = new Date(task.createdAt);
   const modifiedDate = new Date(task.modifiedAt);
   const dueDate = new Date(task.dueDate);
+
   const isModified = task.modifiedAt !== task.createdAt;
   const isOverdue = dueDate < new Date();
+  const completed = task.completed ?? false;
 
-  const getPriorityColor = (priority: string) => {
-    const colors = {
-      High: "#e74c3c",
-      Medium: "#f1c40f",
-      Low: "#2ecc71",
-    };
-    return colors[priority as keyof typeof colors] || Colors[theme].tint;
-  };
+  const getPriorityColor = (p: string) =>
+    (({ High: "#e74c3c", Medium: "#f1c40f", Low: "#2ecc71" } as any)[p]);
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      Work: "#3498db",
-      Personal: "#9b59b6",
-      School: "#e67e22",
-      Other: "#16a085",
-    };
-    return colors[category as keyof typeof colors] || Colors[theme].tint;
-  };
+  const getCategoryColor = (c: string) =>
+    ((
+      {
+        Work: "#3498db",
+        Personal: "#9b59b6",
+        School: "#e67e22",
+        Other: "#16a085",
+      } as any
+    )[c]);
 
   return (
     <Modal
       visible={visible}
-      transparent
       animationType="slide"
+      transparent
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
@@ -82,7 +73,7 @@ export default function TaskViewModal({
             },
           ]}
         >
-          {/* ❌ Close Button */}
+          {/* Close Button */}
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Ionicons name="close" size={24} color={textColor} />
           </TouchableOpacity>
@@ -93,17 +84,44 @@ export default function TaskViewModal({
 
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 12 }}
+            contentContainerStyle={{ paddingBottom: 10 }}
           >
-            {/* 🏷️ Title */}
+            {/* STATUS */}
+            <Text style={[styles.label, { color: subTextColor }]}>Status</Text>
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: completed
+                    ? Colors.common.success
+                    : Colors.common.warning,
+                },
+              ]}
+            >
+              <Text style={styles.badgeText}>
+                {completed ? "Completed" : "Not Completed"}
+              </Text>
+            </View>
+
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
+
+            {/* TITLE */}
             <Text style={[styles.label, { color: subTextColor }]}>Title</Text>
-            <Text style={[styles.value, { color: textColor }]}>
+            <Text
+              style={[
+                styles.value,
+                {
+                  color: textColor,
+                  textDecorationLine: completed ? "line-through" : "none",
+                },
+              ]}
+            >
               {task.title}
             </Text>
 
             <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
-            {/* 📝 Description */}
+            {/* DESCRIPTION */}
             <Text style={[styles.label, { color: subTextColor }]}>
               Description
             </Text>
@@ -112,16 +130,16 @@ export default function TaskViewModal({
                 styles.value,
                 {
                   color: textColor,
-                  fontStyle: !task.description ? "italic" : "normal",
+                  fontStyle: task.description ? "normal" : "italic",
                 },
               ]}
             >
-              {task.description?.trim() || "No description added"}
+              {task.description || "No description"}
             </Text>
 
             <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
-            {/* 🚦 Priority */}
+            {/* PRIORITY */}
             <Text style={[styles.label, { color: subTextColor }]}>
               Priority
             </Text>
@@ -136,7 +154,7 @@ export default function TaskViewModal({
 
             <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
-            {/* 🗂️ Category */}
+            {/* CATEGORY */}
             <Text style={[styles.label, { color: subTextColor }]}>
               Category
             </Text>
@@ -151,81 +169,64 @@ export default function TaskViewModal({
 
             <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
-            {/* ⏰ Due Date */}
+            {/* DUE DATE */}
             <Text style={[styles.label, { color: subTextColor }]}>
               Due Date
             </Text>
-            <View style={styles.row}>
-              <Text
-                style={[
-                  styles.value,
-                  {
-                    color: isOverdue ? Colors.common.error : textColor,
-                    fontWeight: isOverdue ? "700" : "500",
-                  },
-                ]}
-              >
-                {dueDate.toLocaleString()}
-              </Text>
-              {isOverdue && (
-                <View style={styles.overdueBadge}>
-                  <Ionicons
-                    name="alert-circle-outline"
-                    size={16}
-                    color={Colors.common.error}
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text
-                    style={{
-                      color: Colors.common.error,
-                      fontWeight: "600",
-                      fontSize: 12,
-                    }}
-                  >
-                    Overdue
-                  </Text>
-                </View>
-              )}
-            </View>
+            <Text
+              style={[
+                styles.value,
+                {
+                  color: completed
+                    ? Colors.common.success
+                    : isOverdue
+                    ? Colors.common.error
+                    : textColor,
+                  fontWeight: completed || isOverdue ? "700" : "500",
+                },
+              ]}
+            >
+              {completed ? "Completed" : dueDate.toLocaleString()}
+            </Text>
 
             <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
-            {/* 🕒 Created & Modified */}
-            <View style={styles.rowBetween}>
-              <View style={{ flex: 1, marginRight: 6 }}>
-                <Text style={[styles.label, { color: subTextColor }]}>
-                  Created On
-                </Text>
-                <Text
-                  style={[styles.metaValue, { color: subTextColor }]}
-                  numberOfLines={1}
-                >
-                  {createdDate.toLocaleString()}
-                </Text>
-              </View>
+            {/* CREATED */}
+            <Text style={[styles.label, { color: subTextColor }]}>Created</Text>
+            <Text style={[styles.metaValue, { color: subTextColor }]}>
+              {createdDate.toLocaleString()}
+            </Text>
 
-              <View style={{ flex: 1, marginLeft: 6 }}>
-                <Text style={[styles.label, { color: subTextColor }]}>
-                  Last Modified
-                </Text>
+            {/* MODIFIED */}
+            <Text style={[styles.label, { color: subTextColor, marginTop: 8 }]}>
+              Last Modified
+            </Text>
+            <Text style={[styles.metaValue, { color: subTextColor }]}>
+              {isModified ? modifiedDate.toLocaleString() : "Not modified"}
+            </Text>
+
+            {/* COMPLETED AT */}
+            {completed && (
+              <>
                 <Text
-                  style={[styles.metaValue, { color: subTextColor }]}
-                  numberOfLines={1}
+                  style={[styles.label, { color: subTextColor, marginTop: 8 }]}
                 >
-                  {isModified ? modifiedDate.toLocaleString() : "Not modified"}
+                  Completed At
                 </Text>
-              </View>
-            </View>
+                <Text style={[styles.metaValue, { color: subTextColor }]}>
+                  {task.completedAt
+                    ? new Date(task.completedAt).toLocaleString()
+                    : "—"}
+                </Text>
+              </>
+            )}
           </ScrollView>
 
-          {/* ✅ Bottom Close Button */}
+          {/* ONLY CLOSE BUTTON */}
           <TouchableOpacity
             style={[
               styles.bottomButton,
-              {
-                backgroundColor: Colors[theme].tint,
-                shadowColor: isDark ? "#000" : "#999",
-              },
+              { backgroundColor: Colors[theme].tint, marginTop: 8 },
             ]}
             onPress={onClose}
           >
@@ -258,69 +259,30 @@ const styles = StyleSheet.create({
     maxHeight: "85%",
     borderRadius: 16,
     padding: 22,
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
     elevation: 6,
   },
   heading: {
     fontSize: 22,
     fontWeight: "700",
-    marginBottom: 12,
     textAlign: "center",
+    marginBottom: 12,
   },
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginTop: 8,
-    letterSpacing: 0.3,
-  },
-  value: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginTop: 2,
-    fontWeight: "500",
-  },
-  metaValue: {
-    fontSize: 12,
-    marginTop: 2,
-    fontWeight: "500",
-  },
-  divider: {
-    height: 1,
-    marginVertical: 8,
-  },
+  label: { fontSize: 13, fontWeight: "600", marginTop: 10 },
+  value: { fontSize: 15, fontWeight: "500", marginTop: 2 },
+  metaValue: { fontSize: 12, marginTop: 2, fontWeight: "500" },
+  divider: { height: 1, marginVertical: 8 },
   badge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    alignSelf: "flex-start",
     marginTop: 4,
+    alignSelf: "flex-start",
   },
   badgeText: {
-    color: Colors.dark.background,
+    color: "#fff",
     fontWeight: "700",
     fontSize: 13,
-    textTransform: "uppercase",
     letterSpacing: 0.5,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    marginTop: 2,
-  },
-  overdueBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 8,
-  },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginTop: 6,
-    gap: 10,
   },
   bottomButton: {
     alignSelf: "center",
@@ -328,7 +290,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 36,
     borderRadius: 10,
-    elevation: 4,
   },
   closeButton: {
     position: "absolute",
