@@ -29,6 +29,7 @@ export const Colors = {
     success: "#4BB543",
     error: "#FF453A",
     white: "#FFFFFF",
+    warning: "#FFC107",
   },
 };
 
