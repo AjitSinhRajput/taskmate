@@ -28,6 +28,7 @@ export const Colors = {
   common: {
     success: "#4BB543",
     error: "#FF453A",
+    white: "#FFFFFF",
   },
 };
 
