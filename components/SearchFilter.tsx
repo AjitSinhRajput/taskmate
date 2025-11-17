@@ -21,23 +21,10 @@ interface SearchFilterProps {
   onCategoryChange: (
     value: "All" | "Work" | "Personal" | "School" | "Other"
   ) => void;
-  debounceDelay?: number;
+
+  showCompleted: boolean;
+  onToggleCompleted: () => void;
 }
-
-const priorityFilters: ("All" | "High" | "Medium" | "Low")[] = [
-  "All",
-  "High",
-  "Medium",
-  "Low",
-];
-
-const categoryFilters: ("All" | "Work" | "Personal" | "School" | "Other")[] = [
-  "All",
-  "Work",
-  "Personal",
-  "School",
-  "Other",
-];
 
 export default function SearchFilter({
   searchQuery,
@@ -46,154 +33,191 @@ export default function SearchFilter({
   onFilterChange,
   category,
   onCategoryChange,
-  debounceDelay = 300,
+  showCompleted,
+  onToggleCompleted,
 }: SearchFilterProps) {
   const { theme } = useColorScheme();
   const isDark = theme === "dark";
+
+  const bg = Colors[theme].background;
+  const textColor = Colors[theme].text;
+
+  const border = isDark ? "#333" : "#ccc";
+
+  const surface = isDark ? "#1e1f20" : "#ffffff";
+
   const [localQuery, setLocalQuery] = useState(searchQuery);
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  const surface = isDark ? "#242424" : "#ffffff";
-  const border = isDark ? "#333" : "#ddd";
-  const text = Colors[theme].text;
+  // ACTIVE FILTER DETECTION
+  const hasFilter =
+    filter !== "All" ||
+    category !== "All" ||
+    searchQuery !== "" ||
+    showCompleted;
 
-  const hasActiveFilter = filter !== "All" || category !== "All";
-
-  useEffect(() => {
-    setLocalQuery(searchQuery);
-  }, [searchQuery]);
+  useEffect(() => setLocalQuery(searchQuery), [searchQuery]);
 
   useEffect(() => {
     Animated.timing(slideAnim, {
       toValue: filtersVisible ? 1 : 0,
-      duration: 300,
+      duration: 250,
       easing: Easing.out(Easing.ease),
       useNativeDriver: false,
     }).start();
   }, [filtersVisible]);
 
-  const handleSearchChange = (text: string) => {
-    setLocalQuery(text);
-    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-    debounceTimeout.current = setTimeout(
-      () => onSearchChange(text),
-      debounceDelay
-    );
+  const handleSearch = (val: string) => {
+    setLocalQuery(val);
+    onSearchChange(val);
   };
 
-  const handleClearSearch = () => {
-    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-    setLocalQuery("");
-    onSearchChange("");
+  // PRIORITY COLORS
+  const PRIORITY_COLORS = {
+    High: "#e74c3c",
+    Medium: "#f1c40f",
+    Low: "#2ecc71",
   };
 
-  const handleClearFilters = () => {
-    onFilterChange("All");
-    onCategoryChange("All");
-    setFiltersVisible(false);
+  // CATEGORY COLORS
+  const CATEGORY_COLORS = {
+    Work: "#3498db",
+    Personal: "#9b59b6",
+    School: "#e67e22",
+    Other: "#16a085",
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "High":
-        return "#ff6b6b";
-      case "Medium":
-        return "#f1c40f";
-      case "Low":
-        return "#2ecc71";
-      default:
-        return Colors[theme].tint;
-    }
-  };
+  // UNIVERSAL CHIP STYLE HANDLER
+  const getChipStyle = (
+    value: string,
+    isSelected: boolean,
+    type: "priority" | "category"
+  ) => {
+    const colorMap = type === "priority" ? PRIORITY_COLORS : CATEGORY_COLORS;
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      Work: "#3498db",
-      Personal: "#9b59b6",
-      School: "#e67e22",
-      Other: "#16a085",
-    };
-    return colors[category as keyof typeof colors] || Colors[theme].tint;
+    if (value === "All")
+      return {
+        bg: isSelected ? Colors[theme].tint : "transparent",
+        text: isSelected ? Colors[theme].background : textColor,
+        border: isSelected ? Colors[theme].tint : border,
+      };
+
+    const baseColor = colorMap[value as keyof typeof colorMap];
+
+    return isSelected
+      ? {
+          bg: baseColor,
+          text: "#fff",
+          border: baseColor,
+        }
+      : {
+          bg: isDark ? baseColor + "33" : "#f0f0f0",
+          text: isDark ? "#fff" : Colors.light.text,
+          border: isDark ? baseColor + "55" : "#ccc",
+        };
   };
 
   return (
-    <View
-      style={[styles.wrapper, { backgroundColor: Colors[theme].background }]}
-    >
-      {/* 🔍 Search Bar */}
+    <View style={{ marginBottom: 6 }}>
+      {/* SEARCH BAR */}
       <View
         style={[
-          styles.searchContainer,
-          { backgroundColor: surface, borderColor: border },
+          styles.searchRow,
+          {
+            backgroundColor: surface,
+            borderColor: border,
+          },
         ]}
       >
-        <Ionicons
-          name="search-outline"
-          size={18}
-          color={isDark ? "#aaa" : "#555"}
-          style={{ marginRight: 8 }}
-        />
+        <Ionicons name="search-outline" size={18} color={textColor} />
+
         <TextInput
-          placeholder="Search tasks..."
-          placeholderTextColor={isDark ? "#777" : "#999"}
-          style={[styles.searchInput, { color: text }]}
           value={localQuery}
-          onChangeText={handleSearchChange}
+          onChangeText={handleSearch}
+          placeholder="Search tasks…"
+          placeholderTextColor={isDark ? "#777" : "#999"}
+          style={[styles.searchInput, { color: textColor }]}
         />
-        {localQuery.length > 0 && (
-          <TouchableOpacity onPress={handleClearSearch}>
+
+        {localQuery !== "" && (
+          <TouchableOpacity onPress={() => handleSearch("")}>
             <Ionicons
               name="close-circle-outline"
               size={18}
-              color={isDark ? "#999" : "#777"}
+              color={isDark ? "#aaa" : "#777"}
             />
           </TouchableOpacity>
         )}
       </View>
 
-      {/* 🎛️ Filter Controls Row */}
-      <View style={styles.controlsRow}>
+      {/* FILTER ROW */}
+      <View style={styles.row}>
+        {/* FILTER BUTTON */}
         <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            {
-              backgroundColor: Colors[theme].tint,
-              borderColor: Colors[theme].tint,
-            },
-          ]}
+          style={[styles.filterBtn, { backgroundColor: Colors[theme].tint }]}
           onPress={() => setFiltersVisible((prev) => !prev)}
-          activeOpacity={0.8}
         >
           <Ionicons
-            name={filtersVisible ? "close-outline" : "filter-outline"}
-            size={18}
+            name={filtersVisible ? "close-outline" : "funnel-outline"}
+            size={16}
             color={Colors[theme].background}
-            style={{ marginRight: 6 }}
           />
           <Text
-            style={{
-              color: Colors[theme].background,
-              fontWeight: "600",
-              fontSize: 14,
-            }}
+            style={[styles.filterText, { color: Colors[theme].background }]}
           >
-            {filtersVisible ? "Close Filter" : "Filter"}
+            Filter
           </Text>
         </TouchableOpacity>
 
-        {hasActiveFilter && (
+        {/* SHOW COMPLETED */}
+        <TouchableOpacity
+          style={[
+            styles.completedBtn,
+            {
+              backgroundColor: showCompleted ? Colors.common.error : surface,
+              borderColor: showCompleted ? Colors.common.error : border,
+            },
+          ]}
+          onPress={onToggleCompleted}
+        >
+          <Ionicons
+            name={showCompleted ? "checkmark-done" : "checkmark-done-outline"}
+            size={16}
+            color={showCompleted ? "#fff" : textColor}
+          />
+          <Text
+            style={{
+              color: showCompleted ? "#fff" : textColor,
+              marginLeft: 6,
+              fontWeight: "600",
+              fontSize: 13,
+            }}
+          >
+            {showCompleted ? "Hide Completed" : "Show Completed"}
+          </Text>
+        </TouchableOpacity>
+
+        {/* CLEAR BUTTON */}
+        {hasFilter && (
           <TouchableOpacity
             style={[
-              styles.clearButton,
+              styles.clearBtn,
               {
-                backgroundColor: isDark ? "#333" : "#eee",
-                borderColor: isDark ? "#444" : "#ddd",
+                borderColor: Colors[theme].tint,
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 12,
+                paddingVertical: 6,
               },
             ]}
-            onPress={handleClearFilters}
-            activeOpacity={0.8}
+            onPress={() => {
+              handleSearch("");
+              onFilterChange("All");
+              onCategoryChange("All");
+              if (showCompleted) onToggleCompleted();
+            }}
           >
             <Ionicons
               name="refresh-outline"
@@ -214,107 +238,71 @@ export default function SearchFilter({
         )}
       </View>
 
-      {/* 🪄 Animated Filter Section */}
+      {/* FILTER EXPANDED */}
       <Animated.View
         style={{
-          overflow: "hidden",
           height: slideAnim.interpolate({
             inputRange: [0, 1],
             outputRange: [0, 180],
           }),
           opacity: slideAnim,
+          overflow: "hidden",
         }}
       >
-        <View style={[styles.filterGroup, { backgroundColor: surface }]}>
-          {/* Priority */}
-          <Text style={[styles.groupLabel, { color: text }]}>Priority</Text>
-          <View style={styles.filterRow}>
-            {priorityFilters.map((item) => {
-              const isSelected = filter === item;
-              const color = getPriorityColor(item);
-              const isAll = item === "All";
-
-              const bgColor = isSelected
-                ? isAll
-                  ? Colors[theme].tint
-                  : color
-                : "transparent";
-
-              const textColor = isSelected
-                ? isAll
-                  ? Colors[theme].background
-                  : "#fff"
-                : text;
-
+        <View style={[styles.filterBox, { backgroundColor: surface }]}>
+          {/* PRIORITY */}
+          <Text style={[styles.label, { color: textColor }]}>Priority</Text>
+          <View style={styles.filtersRow}>
+            {["All", "High", "Medium", "Low"].map((p) => {
+              const {
+                bg,
+                border: b,
+                text,
+              } = getChipStyle(p, filter === p, "priority");
               return (
                 <TouchableOpacity
-                  key={item}
-                  onPress={() => onFilterChange(item)}
+                  key={p}
+                  onPress={() => onFilterChange(p as any)}
                   style={[
-                    styles.filterChip,
+                    styles.chip,
                     {
-                      backgroundColor: bgColor,
-                      borderColor: isSelected ? color : border,
+                      backgroundColor: bg,
+                      borderColor: b,
                     },
                   ]}
                 >
-                  <Text
-                    style={{
-                      color: textColor,
-                      fontWeight: isSelected ? "700" : "500",
-                      fontSize: 13,
-                    }}
-                  >
-                    {item}
-                  </Text>
+                  <Text style={{ color: text, fontWeight: "600" }}>{p}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          {/* Category */}
-          <Text style={[styles.groupLabel, { color: text, marginTop: 8 }]}>
+          {/* CATEGORY */}
+          <Text style={[styles.label, { color: textColor, marginTop: 10 }]}>
             Category
           </Text>
-          <View style={styles.filterRow}>
-            {categoryFilters.map((cat) => {
-              const isSelected = category === cat;
-              const color = getCategoryColor(cat);
-              const isAll = cat === "All";
 
-              const bgColor = isSelected
-                ? isAll
-                  ? Colors[theme].tint
-                  : color
-                : "transparent";
-
-              const textColor = isSelected
-                ? isAll
-                  ? Colors[theme].background
-                  : "#fff"
-                : text;
-
+          {/* One row layout */}
+          <View style={styles.categoryRow}>
+            {["All", "Work", "Personal", "School", "Other"].map((c) => {
+              const {
+                bg,
+                border: b,
+                text,
+              } = getChipStyle(c, category === c, "category");
               return (
                 <TouchableOpacity
-                  key={cat}
-                  onPress={() => onCategoryChange(cat)}
+                  key={c}
+                  onPress={() => onCategoryChange(c as any)}
                   style={[
-                    styles.filterChip,
+                    styles.categoryChip,
                     {
-                      backgroundColor: bgColor,
-                      borderColor: isSelected ? color : border,
+                      backgroundColor: bg,
+                      borderColor: b,
                     },
                   ]}
                 >
-                  <Text
-                    style={{
-                      color: textColor,
-                      fontWeight: isSelected ? "700" : "500",
-                      fontSize: 13,
-                    }}
-                  >
-                    {cat}
-                  </Text>
+                  <Text style={{ color: text, fontWeight: "600" }}>{c}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -325,71 +313,102 @@ export default function SearchFilter({
   );
 }
 
+/* ---------------------- STYLES ---------------------- */
+
 const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: 0,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  searchRow: {
+    marginHorizontal: 16,
     borderWidth: 1,
     borderRadius: 12,
-    marginHorizontal: 16,
-    marginBottom: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
   },
+
   searchInput: {
     flex: 1,
+    marginLeft: 8,
     fontSize: 15,
   },
-  controlsRow: {
+
+  row: {
+    marginTop: 10,
+
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     marginHorizontal: 16,
-    marginBottom: 8,
+    justifyContent: "flex-start",
+    gap: 10,
+    marginBottom: 10,
   },
-  toggleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 25,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  clearButton: {
-    flexDirection: "row",
-    marginRight: "auto",
-    marginLeft: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 25,
-    paddingVertical: 7,
+
+  filterBtn: {
     paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 18,
+    flexDirection: "row",
+    alignItems: "center",
   },
-  filterGroup: {
+
+  filterText: {
+    marginLeft: 5,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+
+  completedBtn: {
+    flexDirection: "row",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+
+  clearBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+
+  filterBox: {
     marginHorizontal: 16,
+    padding: 12,
     borderRadius: 12,
-    padding: 10,
     borderWidth: 1,
     borderColor: "transparent",
   },
-  groupLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 6,
-    opacity: 0.7,
-  },
-  filterRow: {
+
+  label: { fontWeight: "700", fontSize: 13, marginBottom: 6 },
+
+  filtersRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
   },
-  filterChip: {
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 14,
+
+  chip: {
+    paddingHorizontal: 26,
     paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+
+  categoryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  categoryChip: {
+    flex: 1,
+    marginHorizontal: 4,
+    borderWidth: 1,
+    paddingVertical: 7,
+    borderRadius: 18,
+    alignItems: "center",
   },
 });

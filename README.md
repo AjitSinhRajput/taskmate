@@ -85,7 +85,7 @@ It helps users create, track, and manage daily tasks efficiently with reminders,
 - Display categorized task summaries on the home screen
 - Improved accessibility and layout testing
 
-**Status:** 🟡 In progress  
+**Status:** ✅ Completed and merged into `main`
 **Tag:** `sprint-3`
 
 ---
@@ -98,8 +98,8 @@ It helps users create, track, and manage daily tasks efficiently with reminders,
 
 - Mark tasks as complete
 - View completed tasks in a history/archive section
-- Add overall task completion statistics
+- Overall check task completion statistics
 - Conduct final QA, performance, and defect testing
 
-**Status:** ⏳ Planned  
+**Status:** ✅ Completed and merged into `main` 
 **Tag:** `sprint-4`
